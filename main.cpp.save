@@ -1,6 +1,6 @@
 #include <SDL.h>
 #include <iostream>
-
+#include <vector>
 using namespace std;
 
 const int SCREEN_WIDTH = 800;
@@ -9,13 +9,28 @@ const int TILE_SIZE = 40;
 const int MAP_WIDTH = SCREEN_WIDTH / TILE_SIZE;
 const int MAP_HEIGHT = SCREEN_HEIGHT/ TILE_SIZE;
 
+class Wall {
+public:
+    int x,y;
+    SDL_Rect rect;
+    bool active;
+
+    Wall(int X, int Y);
+
+    void render();
+};
+
+
 class Game{
 public:
     SDL_Window* window;
     SDL_Renderer* renderer;
     bool running;
+    vector<Wall> walls;
+
 
     Game();
+    void generateWalls();
     void render();
     void run();
     ~Game();
@@ -37,26 +52,57 @@ Game::Game() {
         cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << endl;
         running = false;
     }
+    generateWalls();
 }
 
 void Game::render() {
-    SDL_SetRenderDrawColor(renderer, 128 , 128, 128, 255);
-    SDL_RenderClear(renderer);
+    // ve nen
+    SDL_SetRenderDrawColor(renderer, 128 , 128, 128, 255);      // nen xam
+    SDL_RenderClear(renderer);                                                   // xoa nen va ve mau xam da chon len
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0 , 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0 , 255);                // nen den
     for(int i = 1; i < MAP_HEIGHT-1; i++) {
         for(int j = 1; j< MAP_WIDTH-1; j++) {
-            SDL_Rect tile = { j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE };
-            SDL_RenderFillRect(renderer, &tile);
+            SDL_Rect tile = { j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE };         //
+            SDL_RenderFillRect(renderer, &tile);                             // to mau cac hinh chu nhat
         }
     }
-    SDL_RenderPresent(renderer);
+    // ve wall
+    for(int i = 0; i<(int)walls.size(); i++) {
+        walls[i].render(renderer);
+    }
+
+    SDL_RenderPresent(renderer);                                               // hien thi len man hinh
 }
 
 void Game::run() {
     while(running) {
         render();
         SDL_Delay(16);
+    }
+}
+
+Wall::Wall(int X, int Y)
+{
+    x = X;
+    y = Y;
+    active = true;
+    rect = {x, y, TILE_SIZE, TILE_SIZE};
+}
+
+void Wall::render( SDL_Renderer* renderer){
+    if(active) {
+        SDL_SetRenderDrawColor(render, 150, 75, 0 , 255);
+        SDL_RenderFillRect(renderer, &rect);
+    }
+}
+
+void Game::generateWalls() {
+    for(int i = 3; i<MAP_HEIGHT; i+= 2) {
+        for(int j = 3; j< MAP_WIDTH-3; j+=2) {
+            Wall w = Wall(j*TILE_SIZE, i*TILE_SIZE);
+            walls.push_back(w);
+        }
     }
 }
 

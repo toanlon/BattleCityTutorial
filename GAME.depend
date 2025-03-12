@@ -1,5 +1,6 @@
 # depslib dependency file v1.0
-1741714800 source:d:\sdlprogramme\ltnc\game\main.cpp
+1741750458 source:d:\sdlprogramme\ltnc\game\main.cpp
 	<SDL.h>
 	<iostream>
+	<vector>
 
