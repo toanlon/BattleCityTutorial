@@ -1,7 +1,9 @@
 # depslib dependency file v1.0
-1741915347 source:d:\sdlprogramme\ltnc\game\main.cpp
+1741940612 source:d:\sdlprogramme\ltnc\game\main.cpp
 	<SDL.h>
 	<iostream>
 	<vector>
 	<algorithm>
+	<cstdlib>
+	<ctime>
 
