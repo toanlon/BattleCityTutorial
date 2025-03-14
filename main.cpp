@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 const int SCREEN_WIDTH = 800;
@@ -20,11 +21,32 @@ public:
     void render(SDL_Renderer* renderer);
 };
 
+class Bullet {
+public:
+    int x, y;
+    int dx, dy;
+    SDL_Rect rect;
+    bool active;
+
+    Bullet(int startX, int startY, int dirX, int dirY) {
+        x = startX;
+        y = startY;
+        dx = dirX;
+        dy = dirY;
+        active = true;
+        rect = {x, y, 10, 10};              // dan hinh vuong;
+    }
+
+    void move();
+    void render(SDL_Renderer* renderer);
+};
+
 class PlayerTank{
 public:
     int x, y;
-    int dirX, dirY;
+    int dirX, dirY;                             //direction
     SDL_Rect rect;
+    vector<Bullet> bullets;
 
     PlayerTank(int startX, int startY) {
         x = startX;
@@ -35,35 +57,10 @@ public:
     }
 
     void move(int dx, int dy, const vector<Wall>& walls);
-
+    void shoot();
+    void updateBullets();
     void render(SDL_Renderer* renderer);
 };
-
-void PlayerTank::render(SDL_Renderer* renderer){
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-    SDL_RenderFillRect(renderer, &rect);
-}
-
-void PlayerTank::move(int dx, int dy, const vector<Wall>& walls) {
-    int newX = x+dx;
-    int newY = y+dy;
-    this->dirX = dx;
-    this->dirY = dy;
-
-    SDL_Rect newRect = {newX, newY, TILE_SIZE, TILE_SIZE};
-    for(int i = 0; i<walls.size(); i++) {
-        if(walls[i].active && SDL_HasIntersection(&newRect, &walls[i].rect))            //kiem tra su va cham voi tuong
-            return;
-    }
-
-    if(newX >= TILE_SIZE && newX <= SCREEN_WIDTH - TILE_SIZE*2 &&
-       newY >= TILE_SIZE && newY <= SCREEN_HEIGHT - TILE_SIZE*2)  {
-        x = newX;
-        y = newY;
-        rect.x = x;
-        rect.y = y;
-       }
-}
 
 class Game{
 public:
@@ -77,6 +74,7 @@ public:
     void generateWalls();
     void render(SDL_Renderer* renderer);
     void handleEvents();
+    void update();        //kiem soat logic game
     void run();
     ~Game();
 };
@@ -132,6 +130,7 @@ void Game::handleEvents() {
                 case SDLK_DOWN: player.move(0, 5, walls); break;
                 case SDLK_LEFT: player.move(-5, 0, walls); break;
                 case SDLK_RIGHT: player.move(5, 0, walls); break;
+                case SDLK_SPACE: player.shoot() ; break;
             }
 
         }
@@ -141,6 +140,7 @@ void Game::handleEvents() {
 void Game::run() {
     while(running) {
         handleEvents();
+        update();
         render(renderer);
         SDL_Delay(16);
     }
@@ -166,6 +166,79 @@ void Game::generateWalls() {
         for(int j = 3; j< MAP_WIDTH-3; j+=2) {
             Wall w = Wall(j*TILE_SIZE, i*TILE_SIZE);
             walls.push_back(w);
+        }
+    }
+}
+
+void Bullet::move()
+{
+    x += dx;
+    y += dy;
+    rect.x = x;
+    rect.y = y;
+    if(x < TILE_SIZE || x>= SCREEN_WIDTH - TILE_SIZE ||
+       y < TILE_SIZE || y > SCREEN_HEIGHT - TILE_SIZE)    {
+                active = false;
+       }
+}
+
+void Bullet::render(SDL_Renderer* renderer) {
+    if(active) {
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);       // dan mau trang
+        SDL_RenderFillRect(renderer, &rect);
+    }
+}
+
+void PlayerTank::shoot() {
+    bullets.push_back(Bullet(x + TILE_SIZE/2 -5, y+ TILE_SIZE/2 -5,this->dirX, this->dirY));
+}
+
+void PlayerTank::updateBullets() {
+    for(auto& bullet :  bullets) {
+        bullet.move();
+    }
+    bullets.erase(remove_if(bullets.begin(), bullets.end(),                 // di chuyen cac vien dan xuong cuoi mang roi xoa
+                            [](Bullet& b) { return !b.active; }) , bullets.end());
+}
+
+void PlayerTank::render(SDL_Renderer* renderer){
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &rect);
+    for(auto &bullet: bullets) {
+        bullet.render(renderer);
+    }
+}
+
+void PlayerTank::move(int dx, int dy, const vector<Wall>& walls) {
+    int newX = x+dx;
+    int newY = y+dy;
+    this->dirX = dx;
+    this->dirY = dy;
+
+    SDL_Rect newRect = {newX, newY, TILE_SIZE, TILE_SIZE};
+    for(int i = 0; i<walls.size(); i++) {
+        if(walls[i].active && SDL_HasIntersection(&newRect, &walls[i].rect))            //kiem tra su va cham voi tuong
+            return;
+    }
+
+    if(newX >= TILE_SIZE && newX <= SCREEN_WIDTH - TILE_SIZE*2 &&
+       newY >= TILE_SIZE && newY <= SCREEN_HEIGHT - TILE_SIZE*2)  {
+        x = newX;
+        y = newY;
+        rect.x = x;
+        rect.y = y;
+       }
+}
+
+void Game::update() {
+    player.updateBullets();
+    for(auto& bullet : player.bullets) {
+        for(auto& wall : walls) {
+            if(wall.active && SDL_HasIntersection(&bullet.rect, & wall.rect)) {
+                wall.active = false;
+                bullet.active = false;
+                break;
+            }
         }
     }
 }
