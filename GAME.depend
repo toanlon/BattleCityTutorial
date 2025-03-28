@@ -1,9 +1,48 @@
 # depslib dependency file v1.0
-1741940612 source:d:\sdlprogramme\ltnc\game\main.cpp
+1743189809 source:d:\sdlprogramme\ltnc\game\main.cpp
+	"CommonFuntion.h"
+	"Menu.h"
+	"ImpTimer.h"
+
+1742718443 source:d:\sdlprogramme\ltnc\game\baseobject.cpp
+	"BaseObject.h"
+
+1742873844 source:d:\sdlprogramme\ltnc\game\commonfuntion.cpp
+	"CommonFuntion.h"
+
+1743189866 d:\sdlprogramme\ltnc\game\commonfuntion.h
 	<SDL.h>
+	<SDL_image.h>
 	<iostream>
 	<vector>
 	<algorithm>
 	<cstdlib>
 	<ctime>
+	<map>
+	<cmath>
+	<fstream>
+
+1742586229 d:\sdlprogramme\ltnc\game\baseobject.h
+	"CommonFuntion.h"
+
+1743182361 source:d:\sdlprogramme\ltnc\game\menu.cpp
+	"Menu.h"
+	<utility>
+
+1743191386 d:\sdlprogramme\ltnc\game\menu.h
+	"CommonFuntion.h"
+	"BaseObject.h"
+
+1742552204 source:d:\sdlprogramme\ltnc\game\game_map.cpp
+
+1742584347 source:d:\sdlprogramme\ltnc\game\gameobject.cpp
+
+1742702910 d:\sdlprogramme\ltnc\game\gameobject.h
+	"BaseObject.h"
+
+1743157213 source:d:\sdlprogramme\ltnc\game\imptimer.cpp
+	"ImpTimer.h"
+
+1743157202 d:\sdlprogramme\ltnc\game\imptimer.h
+	"CommonFuntion.h"
 
