@@ -41,16 +41,27 @@ public:
     int x, y;
      SDL_Rect frame[2] = {{0, 0, 4*TILE_SIZE, 4*TILE_SIZE},
                                      {48, 0, 4*TILE_SIZE, 4*TILE_SIZE}};
-    string type_input;
+    string type_move;
     bool tank_move;
+    int right = 0;
+    int left = 0;
+    int up = 0;
+    int down = 0;
     int dirX, dirY;
     int moveDelay, shootDelay;
     SDL_Rect rect;
     bool active;
     vector<Bullet> bullets;
 
+    EnemyTank() {
+        type_move = "down";
+        tank_move = false;
+    }
+
     EnemyTank(int startX, int startY) {
-        moveDelay = 15;
+        type_move = "down";
+        tank_move = false;
+        moveDelay = 8;
         shootDelay = 5;
         x = startX;
         y = startY;
@@ -62,16 +73,16 @@ public:
 
     void false_active(SDL_Renderer* renderer) {
         for(int i = 0; i<2; i++) {
-            SDL_RenderCopy(renderer, TextureManager["enemytnakfalse"], &frame[i], &rect);
+            SDL_RenderCopy(renderer, TextureManager["enemytankfalse"], &frame[i], &rect);
             SDL_RenderPresent(renderer);
+            SDL_Delay(60);
         }
-
     }
-    void move(const vector<Wall>& walls, const vector<Wall>& rocks, int playerX, int playerY) {
+    void move(const vector<Wall>& bricks, const vector<Wall>& rocks, int playerX, int playerY) {
         if(--moveDelay > 0) return;
-        moveDelay = 15;
+        moveDelay = 8;
 
-        if(rand() % 100 < 30) {
+        if(rand() % 100 < 36) {
             int dx = playerX - x;
             int dy = playerY - y;
             if(abs(dx) > abs(dy)) {
@@ -96,8 +107,8 @@ public:
         SDL_Rect newRect = {newX, newY, 4*TILE_SIZE, 4*TILE_SIZE};
 
         bool check = false;
-        for(const auto& wall: walls) {
-            if(wall.active && SDL_HasIntersection(&newRect, &wall.rect)) {
+        for(const auto& brick : bricks) {
+            if(brick.active && SDL_HasIntersection(&newRect, &brick.rect)) {
                 check = true;
                 break;
             }
@@ -111,6 +122,14 @@ public:
                 }
             }
         }
+
+        if(!check) {
+            SDL_Rect p_Rect = {playerX, playerY, 4*TILE_SIZE, 4*TILE_SIZE};
+            if(SDL_HasIntersection(&newRect, &p_Rect)) {
+                check = true;
+            }
+        }
+
         if(newX < TILE_SIZE*4 || newX > SCREEN_WIDTH - TILE_SIZE*8 ||
                 newY < TILE_SIZE*2 || newY > SCREEN_HEIGHT - TILE_SIZE*6)  {
                     check = true;
@@ -118,10 +137,23 @@ public:
 
 
         if (!check) {
+            if(newX < x) type_move = "left";
+            else if(newX > x)  type_move = "right";
+
+            if(newY > y) type_move = "down";
+            else if(newY < y) type_move = "up";
             x = newX;
             y = newY;
             rect.x = x;
             rect.y = y;
+            tank_move = true;
+        }
+        else {
+            if(dirX > 0) type_move = "right";
+            else if(dirX < 0) type_move = "left";
+            if(dirY > 0) type_move = "down";
+            else if(dirY < 0) type_move = "up";
+            tank_move = false;
         }
     }
 
@@ -140,8 +172,49 @@ public:
     }
 
     void render(SDL_Renderer* renderer){
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderFillRect(renderer, &rect);
+
+        if(tank_move) {
+        if(type_move == "up") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankup"], &frame[up/10], &rect);
+            up++;
+            if(up / 10 >= 2) up = 0;
+        }
+
+        if(type_move == "down") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankdown"], &frame[down/10], &rect);
+            down++;
+            if(down/10 >= 2) down = 0;
+        }
+
+        if(type_move == "right") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankright"], &frame[right/10], &rect);
+            right++;
+            if(right / 10 >= 2) right = 0;
+        }
+
+        if(type_move == "left") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankleft"], &frame[left/10], &rect);
+            left++;
+            if(left/10 >= 2 ) left = 0;
+        }
+    } else {
+        if(type_move == "up") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankup"], &frame[0], &rect);
+        }
+
+        if(type_move == "down") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankdown"], &frame[0], &rect);
+        }
+
+        if(type_move == "right") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankright"], &frame[0], &rect);
+        }
+
+        if(type_move == "left") {
+            SDL_RenderCopy(renderer, TextureManager["enemytankleft"], &frame[0], &rect);
+        }
+    }
+
         for(auto &bullet : bullets) {
             bullet.render(renderer);
         }
@@ -207,6 +280,7 @@ public:
 
 class Game{
 public:
+    Mix_Chunk* bulletHitSound;
     ImpTimer fps_timer;
     int healthPlayer = 3;
     bool running;
@@ -230,6 +304,12 @@ public:
 Game::Game() {
     running = true;
 
+    // - bulletHitSound: Hiệu ứng âm thanh khi đạn trúng, được tải từ file WAV.
+    bulletHitSound = Mix_LoadWAV("sound/bullethit.wav");
+    if(!bulletHitSound) {
+        cerr << "Failed to load bullethit.wav! SDL_mixer Error: " << Mix_GetError() << endl;
+    }
+
     TextureManager["brick"] = LoadTexture("map/brick.png", renderer);
     TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
     TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
@@ -239,7 +319,11 @@ Game::Game() {
     TextureManager["playertankdown"] = LoadTexture("image/playertankdown.png", renderer);
     TextureManager["playertankright"] = LoadTexture("image/playertankright.png", renderer);
     TextureManager["playertankleft"] = LoadTexture("image/playertankleft.png", renderer);
-    TextureManager["enemytnakfalse"] =  LoadTexture("image/enemytnakfalse.png", renderer);
+    TextureManager["enemytankfalse"] =  LoadTexture("image/enemytankfalse.png", renderer);
+    TextureManager["enemytankleft"] =  LoadTexture("image/enemytankleft.png", renderer);
+    TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
+    TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
+    TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
     const string mapPath = "map/stage1.txt";
     LoadMap(mapPath);
     spawnEnemies();
@@ -286,8 +370,6 @@ void Game:: LoadMap(const string& path) {
 
 void Game::render(SDL_Renderer* renderer) {
     // ve nen
-    //fps_timer.start();
-    cout << "render run" << endl;
     SDL_SetRenderDrawColor(renderer, 128 , 128, 128, 255);      // nen xam
     SDL_RenderClear(renderer);                                                   // xoa nen va ve mau xam da chon len
 
@@ -350,11 +432,11 @@ void Game::run() {
         int real_imp_time = fps_timer.get_ticks();
         int time_one_frame = 1000/FRAME_PER_SECOND; //ms
 
-        cout << real_imp_time << " " << time_one_frame  << endl;
+        //cout << real_imp_time << " " << time_one_frame  << endl;
 
         if(real_imp_time < time_one_frame) {
             int delay_time = time_one_frame - real_imp_time;
-            cout << delay_time << endl;
+           // cout << delay_time << endl;
             if(delay_time >= 0) SDL_Delay(delay_time);
         }
         //SDL_Delay(16);
@@ -398,16 +480,30 @@ void Game::spawnEnemies(){
                     ey = 2*TILE_SIZE;
                     break;
             }
+            SDL_Rect rand_enemy = {ex, ey, 4*TILE_SIZE, 4*TILE_SIZE};
+
             validPosition = true;
             for(const auto& brick : bricks) {
-                if(brick.active && brick.x == ex && brick.y == ey) {
+                if(brick.active && SDL_HasIntersection(&rand_enemy, &brick.rect)) {
                     validPosition = false;
                     break;
                 }
             }
 
+            if(!validPosition) continue;
+            for(const auto& rock : rocks) {
+                if(rock.active && SDL_HasIntersection(&rand_enemy, &rock.rect)) {
+                    validPosition = false;
+                    break;
+                }
+            }
+
+            if(!validPosition) continue;
+            if(SDL_HasIntersection(&rand_enemy, &player.rect))
+
+            if(!validPosition) continue;
             for(const auto& enemy : enemies) {
-                if(enemy.active && enemy.x == ex && enemy.y == ey) {
+                if(enemy.active &&  SDL_HasIntersection(&rand_enemy, &enemy.rect)) {
                     validPosition = false;
                     break;
                 }
@@ -450,8 +546,6 @@ void PlayerTank::updateBullets() {
 }
 
 void PlayerTank::render(SDL_Renderer* renderer) {
-//    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-//    SDL_RenderFillRect(renderer, &rect);
     if(tank_move) {
         if(type_input == "up") {
             SDL_RenderCopy(renderer, TextureManager["playertankup"], &frame[up], &rect);
@@ -541,7 +635,7 @@ void Game::update() {
     for(auto& enemy:enemies) {
         enemy.move(bricks, rocks, player.x, player.y);
         enemy.updateBullets();
-        if(rand() % 100 < 10) {
+        if(rand() % 100 < 15) {
             enemy.shoot();
         }
     }
@@ -604,6 +698,8 @@ void Game::update() {
         for(auto& enemy : enemies) {
             if(enemy.active && SDL_HasIntersection(&bullet.rect, &enemy.rect)) {
                 enemy.active = false;
+                cout << "kill_enemy" <<endl;
+                Mix_PlayChannel(-1, bulletHitSound, 0);
                 enemy.false_active(renderer);
                 bullet.active = false;
             }
@@ -650,19 +746,27 @@ void Game::update() {
 }
 
 Game::~Game() {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    //\\Mix_FreeChunk(bulletHitSound);
+
+   SDL_DestroyRenderer(renderer);
+   SDL_DestroyWindow(window);
+   SDL_Quit();
 }
 
 int main(int argc, char* argv[])
 {
     srand(time(0));
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         cerr << "SDL could not initialize! SDL_Eror: " << SDL_GetError() << endl;
         running = false;
     }
+
+    // Khởi tạo SDL_mixer với tần số 44100 Hz, định dạng mặc định, 2 kênh (stereo) và kích thước buffer 2048 byte
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        cerr << "SDL_mixer could not initialize! SDL_mixwe Error: " << Mix_GetError() << endl;
+    }
+
     window = SDL_CreateWindow("Battle City", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if(!window) {
         cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << endl;
@@ -674,14 +778,55 @@ int main(int argc, char* argv[])
         running = false;
     }
 
+    Mix_Music* introMenuMusic = Mix_LoadMUS("sound/introMenu.mp3");
+    if(!introMenuMusic) {
+        cerr << "Failed to load introMenu.mp3! SDL_mixer Error: " << Mix_GetError() << endl;
+    }
+    // - introGameMusic: Nhạc nền intro game, được tải từ file WAV.
+    Mix_Music* introGameMusic = Mix_LoadMUS("sound/introGame.wav");
+    if(!introGameMusic) {
+        cerr << "Failed to load introGame.wav! SDL_mixer Error: " << Mix_GetError() << endl;
+    }
+//    // - bulletHitSound: Hiệu ứng âm thanh khi đạn trúng, được tải từ file WAV.
+//    Mix_Chunk* bulletHitSound = Mix_LoadWAV("sound/bullethit.wav");
+//    if(!bulletHitSound) {
+//        cerr << "Failed to load bullethit.wav! SDL_mixer Error: " << Mix_GetError() << endl;
+//    }
+    // - gameOverSound: Hiệu ứng game over, được tải từ file WAV.
+    Mix_Chunk* gameOverSound = Mix_LoadWAV("sound/gameover.wav");
+    if(!gameOverSound) {
+        cerr << "Failed to load gameover.wav! SDL_mixer Error: " << Mix_GetError() << endl;
+    }
+
+    // Phát nhạc nền intro menu, với tham số -1 để lặp vô hạn
+    Mix_PlayMusic(introMenuMusic, -1);
+
     Menu menu(renderer);
     Menu::MenuResult choose = menu.chooseMenu();
     if(choose == 0) {
+
+        // Khi chế độ đã chọn, dừng nhạc intro menu
+        Mix_HaltMusic();
+        // Phát nhạc intro game một lần (tham số 1)
+        Mix_PlayMusic(introGameMusic, 1);
+
         Game game;
         if(game.running) {
             game.run();
         }
     }
+
+    // Sau khi game kết thúc, giải phóng các tài nguyên âm thanh
+    Mix_FreeMusic(introMenuMusic);
+    Mix_FreeMusic(introGameMusic);
+    //Mix_FreeChunk(bulletHitSound);
+    Mix_FreeChunk(gameOverSound);
+    // Đóng SDL_mixer
+    Mix_CloseAudio();
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }
