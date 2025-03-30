@@ -1,15 +1,24 @@
 #include "Menu.h"
 #include <utility>
-pair<string, SDL_Texture*> TextureManagerMenu[7];
+static pair<string, SDL_Texture*> TextureManagerMenu[10];
 
-Menu::Menu(SDL_Renderer* renderer){
-    TextureManagerMenu[5] = {"background", LoadTexture("image/menubackgr.png", renderer) };
-    TextureManagerMenu[6] = {"stringbattlecity", LoadTexture("image/stringbattlecity.png", renderer) };
-    TextureManagerMenu[0] = {"mode1p", LoadTexture("image/tt1player.png", renderer)};
-    TextureManagerMenu[1] = {"mode2p", LoadTexture("image/tt2player.png", renderer)};
-    TextureManagerMenu[2] = {"ranking", LoadTexture("image/ranking.png", renderer)};
-    TextureManagerMenu[3] = {"setting", LoadTexture("image/settings.png", renderer)};
-    TextureManagerMenu[4] ={"exit", LoadTexture("image/exit.png", renderer)};
+Menu::Menu(SDL_Renderer* renderer) {
+    bool load = false;
+    for(int i = 0; i< 10; i++) {
+        if(TextureManagerMenu[i].second != NULL) load = true;
+    }
+    if(!load) {
+        TextureManagerMenu[5] = {"background", LoadTexture("image/menubackgr.png", renderer) };
+        TextureManagerMenu[6] = {"stringbattlecity", LoadTexture("image/stringbattlecity.png", renderer) };
+        TextureManagerMenu[0] = {"mode1p", LoadTexture("image/tt1player.png", renderer)};
+        TextureManagerMenu[1] = {"mode2p", LoadTexture("image/tt2player.png", renderer)};
+        TextureManagerMenu[2] = {"ranking", LoadTexture("image/ranking.png", renderer)};
+        TextureManagerMenu[3] = {"setting", LoadTexture("image/settings.png", renderer)};
+        TextureManagerMenu[4] ={"exit", LoadTexture("image/exit.png", renderer)};
+        TextureManagerMenu[7] = {"pauseBGR", LoadTexture("image/menuPauseBackgr.jpg", renderer)};
+        TextureManagerMenu[8] = {"pausePlay", LoadTexture("image/menuPausePlay.png", renderer)};
+        TextureManagerMenu[9] = {"pauseMenu", LoadTexture("image/menuPauseBackToMenu.png", renderer)};
+    }
     loadMenu(renderer);
 }
 
@@ -29,7 +38,7 @@ void Menu::loadMenu(SDL_Renderer* renderer) {
 
     SDL_RenderClear(renderer);
     SDL_Rect bgr_menu = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-    SDL_Rect stringbattlecity = {170, 75, 380, 220};
+    SDL_Rect stringbattlecity = {180, 60, 450, 250};
     SDL_RenderCopy(renderer, TextureManagerMenu[5].second, NULL, &bgr_menu);
     SDL_RenderCopy(renderer, TextureManagerMenu[6].second, NULL, &stringbattlecity);
     for(int i = 0; i < 5; i++) {
@@ -42,7 +51,6 @@ void Menu::loadMenu(SDL_Renderer* renderer) {
     }
 
     SDL_RenderPresent(renderer);
-    SDL_Delay(16);
 
 }
 Menu::MenuResult Menu::chooseMenu()
@@ -68,6 +76,25 @@ Menu::MenuResult Menu::chooseMenu()
 
     return EXIT;
 }
+
+void Menu::renderPauseMenu(SDL_Renderer* renderer) {
+    // Giả sử bạn có texture cho background pause và các nút:
+    SDL_Rect fullScreen = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    SDL_RenderClear(renderer);
+    // Vẽ background pause (có thể là một hình ảnh với màu đen và hiệu ứng)
+    SDL_RenderCopy(renderer, TextureManagerMenu[7].second, NULL, &fullScreen);
+
+    // Vẽ nút Resume ở góc dưới hoặc vị trí phù hợp
+    SDL_Rect resumeRect = {SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT/2 - 60, 200, 50};
+    SDL_RenderCopy(renderer, TextureManagerMenu[8].second, NULL, &resumeRect);
+
+    // Vẽ nút Menu (để quay về menu chính)
+    SDL_Rect menuRect = {SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT/2 + 10, 200, 50};
+    SDL_RenderCopy(renderer, TextureManagerMenu[9].second, NULL, &menuRect);
+
+    SDL_RenderPresent(renderer);
+}
+
 Menu::MenuResult Menu::handleClick(int x, int y) {
     for(int i = 0; i<buttonRects.size(); i++ ) {
         if(x >= buttonRects[i].x && x<= buttonRects[i].x +buttonRects[i].w &&

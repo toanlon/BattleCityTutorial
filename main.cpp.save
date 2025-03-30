@@ -3,7 +3,6 @@
 #include "ImpTimer.h"
 map<string, SDL_Texture*> TextureManager;
 
-
 class Wall {
 public:
     int x,y;
@@ -65,9 +64,9 @@ public:
         shootDelay = 5;
         x = startX;
         y = startY;
-        rect = {x, y, 2*TILE_SIZE, 2*TILE_SIZE};
+        rect = {x, y+8, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
         dirX = 0;
-        dirY = 1;
+        dirY = 12;
         active = true;
     }
 
@@ -80,7 +79,7 @@ public:
     }
     void move(const vector<Wall>& bricks, const vector<Wall>& rocks, int playerX, int playerY) {
         if(--moveDelay > 0) return;
-        moveDelay = 8;
+        moveDelay = 12;
 
         if(rand() % 100 < 36) {
             int dx = playerX - x;
@@ -104,7 +103,7 @@ public:
 
         int newX = x + dirX;
         int newY = y + dirY;
-        SDL_Rect newRect = {newX, newY, 2*TILE_SIZE, 2*TILE_SIZE};
+        SDL_Rect newRect = {newX, newY, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
 
         bool check = false;
         for(const auto& brick : bricks) {
@@ -131,7 +130,7 @@ public:
         }
 
         if(newX < TILE_SIZE*2 || newX > SCREEN_WIDTH - TILE_SIZE*8 ||
-                newY < TILE_SIZE*2 || newY > SCREEN_HEIGHT - TILE_SIZE*6)  {
+                newY < TILE_SIZE || newY > SCREEN_HEIGHT - TILE_SIZE*3)  {
                     check = true;
         }
 
@@ -160,7 +159,7 @@ public:
     void shoot() {
         if(-- shootDelay > 0) return;
         shootDelay = 5;
-        bullets.push_back(Bullet(x+TILE_SIZE* -5, y+TILE_SIZE* - 5, this->dirX, this->dirY));
+        bullets.push_back(Bullet(x+TILE_SIZE -5, y+TILE_SIZE - 5, this->dirX/2, this->dirY/2));
     }
 
     void updateBullets() {
@@ -221,31 +220,17 @@ public:
     }
 };
 
-class Eagle {
-public:
-    int x;
-    int y;
-    bool active = true;
-    SDL_Rect rect;
-
-    Eagle() {};
-
-    Eagle(int X, int Y) {
-        x = X;
-        y = Y;
-        rect = {x, y, 2*TILE_SIZE, 2*TILE_SIZE};
-    }
-
-    void render(SDL_Renderer* renderer) {
-        SDL_RenderCopy(renderer, TextureManager["eagle"], NULL, &rect);
-    }
-};
-
 class PlayerTank{
 public:
+
+    bool isInvincible = false;
+    Uint32 isInvincibleStart = 0;
+    const Uint32 invincible_Time = 3000;
+
     int x, y;
     string type_input;
     bool tank_move;
+    int invincible_Delay = 0;
     int right = 0;
     int left = 0;
     int up = 0;
@@ -257,22 +242,28 @@ public:
     vector<Bullet> bullets;
 
     PlayerTank() {
+        isInvincible = true;
         tank_move = false;
         type_input = "up";
         dirX = 0;
-        dirY = -1;
+        dirY = -12;
     };
     PlayerTank(int startX, int startY) {
+        isInvincible = true;
         tank_move = false;
         type_input = "up";
         x = startX;
         y = startY;
-        rect = {x, y, 2*TILE_SIZE, 2*TILE_SIZE};
+        rect = {x+8, y+8, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
         dirX = 0;
         dirY = -1;                                              // mac dinh tank di len (truc y huong xuong)
     }
 
-    void move(bool tank_move, string type_input,int dx, int dy, const vector<Wall>& walls, const vector<Wall> rocks, const vector<EnemyTank>& enemies, Eagle eagle);
+    void setInvincible(Uint32 currentTime) {
+        isInvincible = true;
+        isInvincibleStart = currentTime;
+    }
+    void move(bool tank_move, string type_input,int dx, int dy, const vector<Wall>& walls, const vector<Wall> rocks, const vector<EnemyTank>& enemies);
     void shoot();
     void updateBullets();
     void render(SDL_Renderer* renderer);
@@ -281,14 +272,26 @@ public:
 class Game{
 public:
     Mix_Chunk* bulletHitSound;
+
     ImpTimer fps_timer;
+    // Biến toàn cục hoặc thành viên của lớp Game để lưu thời gian spawn cuối cùng
+    Uint32 lastSpawnTime = 0;
+    // Đặt khoảng delay mong muốn (ví dụ: 5000ms = 5 giây)
+    const Uint32 spawnDelay = 5000;
+
+    // --- THÊM BIẾN PAUSE:
+    Menu* pauseMenu = new Menu(renderer);
+    bool isPaused = false;       // trạng thái game pause
+    ImpTimer pauseTimer;         // để đo thời gian bị pause
+
     int healthPlayer = 3;
     bool running;
+    bool isReturnToMenu = false;
     vector<Wall> bricks;
     vector<Wall> rocks;
     PlayerTank player;
-    Eagle eagle;
-    int enemyNumber = 3;
+    int enemyNumber = 10;
+    int enemyKill = 0;
     vector<EnemyTank> enemies;
 
     Game();
@@ -310,23 +313,32 @@ Game::Game() {
         cerr << "Failed to load bullethit.wav! SDL_mixer Error: " << Mix_GetError() << endl;
     }
 
-    TextureManager["brick"] = LoadTexture("map/brick.png", renderer);
-    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
-    TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
-    TextureManager["enemytank"] = LoadTexture("map/enemytank.png", renderer);
-    TextureManager["eagle"] = LoadTexture("map/eagle.jpg", renderer);
-    TextureManager["playertankup"] = LoadTexture("image/playertankup.png", renderer);
-    TextureManager["playertankdown"] = LoadTexture("image/playertankdown.png", renderer);
-    TextureManager["playertankright"] = LoadTexture("image/playertankright.png", renderer);
-    TextureManager["playertankleft"] = LoadTexture("image/playertankleft.png", renderer);
-    TextureManager["enemytankfalse"] =  LoadTexture("image/enemytankfalse.png", renderer);
-    TextureManager["enemytankleft"] =  LoadTexture("image/enemytankleft.png", renderer);
-    TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
-    TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
-    TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
+//    TextureManager["pauseButton"] = LoadTexture("image/pauseButton.png", renderer);
+//    TextureManager["brick"] = LoadTexture("map/brick.png", renderer);
+//    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
+//    TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
+//    TextureManager["enemytank"] = LoadTexture("map/enemytank.png", renderer);
+//    TextureManager["playertankup"] = LoadTexture("image/playertankup.png", renderer);
+//    TextureManager["playertankdown"] = LoadTexture("image/playertankdown.png", renderer);
+//    TextureManager["playertankright"] = LoadTexture("image/playertankright.png", renderer);
+//    TextureManager["playertankleft"] = LoadTexture("image/playertankleft.png", renderer);
+//    TextureManager["helmet"] = LoadTexture("image/helmet.png", renderer);
+//    TextureManager["enemytankfalse"] =  LoadTexture("image/enemytankfalse.png", renderer);
+//    TextureManager["enemytankleft"] =  LoadTexture("image/enemytankleft.png", renderer);
+//    TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
+//    TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
+//    TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
     const string mapPath = "map/test.txt";
     LoadMap(mapPath);
-    spawnEnemies();
+
+//    Uint32 currentTime = SDL_GetTicks();
+//    if(currentTime - lastSpawnTime >= spawnDelay) {
+    spawnEnemies();      // Hàm spawn enemy của bạn
+
+    // Thiết lập lastSpawnTime ban đầu
+    lastSpawnTime = SDL_GetTicks();
+//        lastSpawnTime = currentTime;
+//    }
 }
 
 void Game:: LoadMap(const string& path) {
@@ -334,7 +346,7 @@ void Game:: LoadMap(const string& path) {
     if(!file.is_open()) {
         cout << "Can't load file" << path << endl;
     }
-    int MAP[28][34];
+    int MAP[60][60];
     for(int i = 0; i< MAP_HEIGHT; i++) {
         for(int j = 0; j< MAP_WIDTH; j++) {
             file >> MAP[i][j];
@@ -353,12 +365,6 @@ void Game:: LoadMap(const string& path) {
                         player.rect = {(j-1)*TILE_SIZE, (i-1)*TILE_SIZE, 2*TILE_SIZE, 2*TILE_SIZE};
                     }
                     break;
-                case 5:
-                    if(MAP[i-1][j-1] == 5) {
-                        eagle.x = (j-1)*TILE_SIZE;
-                        eagle.y = (i-1)*TILE_SIZE;
-                        eagle.rect = {(j-1)*TILE_SIZE, (i-1)*TILE_SIZE, 2*TILE_SIZE, 2*TILE_SIZE};
-                    }
                 default:
                     break;
             }
@@ -388,11 +394,13 @@ void Game::render(SDL_Renderer* renderer) {
         rocks[i].render(renderer);
     }
     player.render(renderer);
-    eagle.render(renderer);
 
     for(auto& enemy : enemies) {
         enemy.render(renderer);
     }
+
+    SDL_Rect buttonPauseR = {700, 50, 50, 50};
+    SDL_RenderCopy(renderer, TextureManager["pauseButton"], NULL, &buttonPauseR);
 
     SDL_RenderPresent(renderer);                                               // hien thi len man hinh
 }
@@ -402,20 +410,57 @@ void Game::handleEvents() {
     while(SDL_PollEvent(&event)) {
         if(event.type == SDL_QUIT) {
             running =false;
-        }   else if(event.type == SDL_KEYDOWN) {
-            switch(event.key.keysym.sym) {
-                case SDLK_UP: player.move(true, "up", 0, -8, bricks, rocks, enemies, eagle); break;
-                case SDLK_DOWN: player.move(true, "down",0, 8, bricks, rocks, enemies, eagle); break;
-                case SDLK_LEFT: player.move(true, "left" , -8, 0, bricks, rocks, enemies, eagle); break;
-                case SDLK_RIGHT: player.move(true, "right", 8, 0, bricks, rocks, enemies, eagle); break;
-                case SDLK_SPACE: player.shoot() ; break;
+        } else if(event.type == SDL_MOUSEBUTTONDOWN) {
+            // Giả sử nút pause nằm ở góc trên bên phải, ví dụ: (SCREEN_WIDTH-100, 0) với kích thước 100x50
+            int mx = event.button.x;
+            int my = event.button.y;
+            SDL_Rect buttonPauseR = {700, 50, 50, 50};
+            if(mx >= buttonPauseR.x && mx <= buttonPauseR.x + buttonPauseR.w &&
+               my >= buttonPauseR.y && my <= buttonPauseR.y + buttonPauseR.h) {
+                // Toggle trạng thái pause
+                if(!isPaused) {
+                    isPaused = true;
+                    pauseTimer.start();
+                } else {
+                    // Khi resume, điều chỉnh lastSpawnTime để bù thời gian dừng
+                    Uint32 pauseDuration = pauseTimer.get_ticks();
+                    lastSpawnTime += pauseDuration;
+                    player.isInvincibleStart += pauseDuration;
+                    isPaused = false;
+                }
             }
+        } else if(event.type == SDL_KEYDOWN) {
+
+                // Kiểm tra phím pause (ví dụ: phím P)
+            if(event.key.keysym.sym == SDLK_p) {
+                if(!isPaused) {
+                    isPaused = true;
+                    pauseTimer.start();
+                } else {
+                    // Khi resume: cộng thêm khoảng thời gian bị pause vào lastSpawnTime
+                    Uint32 pauseDuration = pauseTimer.get_ticks();
+                    lastSpawnTime += pauseDuration;
+                    player.isInvincibleStart += pauseDuration;
+                    isPaused = false;
+                }
+            }
+            // Các phím khác
+            if(!isPaused) { // Chỉ xử lý input khi không pause
+                switch(event.key.keysym.sym) {
+                    case SDLK_UP: player.move(true, "up", 0, -8, bricks, rocks, enemies); break;
+                    case SDLK_DOWN: player.move(true, "down",0, 8, bricks, rocks, enemies); break;
+                    case SDLK_LEFT: player.move(true, "left" , -8, 0, bricks, rocks, enemies); break;
+                    case SDLK_RIGHT: player.move(true, "right", 8, 0, bricks, rocks, enemies); break;
+                    case SDLK_SPACE: player.shoot() ; break;
+                }
+            }
+
         } else if(event.type == SDL_KEYUP) {
                 switch(event.key.keysym.sym) {
-                    case SDLK_UP: player.move(false, "up", 0, 0, bricks, rocks, enemies, eagle); break;
-                    case SDLK_DOWN: player.move(false, "down",0, 0, bricks, rocks, enemies, eagle); break;
-                    case SDLK_LEFT: player.move(false, "left" , 0, 0, bricks, rocks, enemies, eagle); break;
-                    case SDLK_RIGHT: player.move(false, "right", 0, 0, bricks, rocks, enemies, eagle); break;
+                    case SDLK_UP: player.move(false, "up", 0, 0, bricks, rocks, enemies); break;
+                    case SDLK_DOWN: player.move(false, "down",0, 0, bricks, rocks, enemies); break;
+                    case SDLK_LEFT: player.move(false, "left" , 0, 0, bricks, rocks, enemies); break;
+                    case SDLK_RIGHT: player.move(false, "right", 0, 0, bricks, rocks, enemies); break;
                     case SDLK_SPACE: player.shoot() ; break;
                     }
             }
@@ -423,20 +468,62 @@ void Game::handleEvents() {
 }
 void Game::run() {
     while(running) {
+       // cout <<
         //render(renderer);
         fps_timer.start();
         handleEvents();
+
+        if(isPaused) {
+            pauseMenu->renderPauseMenu(renderer);  // hàm tự bạn viết để render pause menu
+
+            // Chờ người dùng bấm vào các nút trong pause menu
+            // Bạn có thể dùng một vòng lặp nhỏ riêng để xử lý sự kiện pause menu
+            bool pauseMenuActive = true;
+            SDL_Event event;
+            while(pauseMenuActive) {
+                while(SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) {
+                        running = false;
+                        pauseMenuActive = false;
+                    }
+                    else if(event.type == SDL_MOUSEBUTTONDOWN) {
+                        int mx = event.button.x;
+                        int my = event.button.y;
+                        SDL_Rect resumeRect = {SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT/2 - 60, 200, 50};
+                        SDL_Rect menuRect = {SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT/2 + 10, 200, 50};
+                        if(mx >= resumeRect.x && mx <= resumeRect.x + resumeRect.w &&
+                           my >= resumeRect.y && my <= resumeRect.y + resumeRect.h) {
+                            // Resume game: điều chỉnh lastSpawnTime và thoát vòng lặp pause menu
+                            Uint32 pauseDuration = pauseTimer.get_ticks();
+                            lastSpawnTime += pauseDuration;
+                            player.isInvincibleStart += pauseDuration;
+                            pauseMenuActive = false;
+                            isPaused = false;
+                        }
+                        else if(mx >= menuRect.x && mx <= menuRect.x + menuRect.w &&
+                                my >= menuRect.y && my <= menuRect.y + menuRect.h) {
+                            // Quay về menu chính: có thể đặt running = false hoặc chuyển trạng thái menu
+                            isReturnToMenu = true;
+                            pauseMenuActive = false;
+                            running = false;
+                        }
+                    }
+                }
+                SDL_Delay(10); // Delay nhẹ để tránh vòng lặp
+        }
+            if(isReturnToMenu) break;
+
+            continue;  // Bỏ qua update và render game chính
+        }
+
         update();
         render(renderer);
 
         int real_imp_time = fps_timer.get_ticks();
         int time_one_frame = 1000/FRAME_PER_SECOND; //ms
 
-        //cout << real_imp_time << " " << time_one_frame  << endl;
-
         if(real_imp_time < time_one_frame) {
             int delay_time = time_one_frame - real_imp_time;
-           // cout << delay_time << endl;
             if(delay_time >= 0) SDL_Delay(delay_time);
         }
         //SDL_Delay(16);
@@ -460,8 +547,10 @@ void Wall::render( SDL_Renderer* renderer){
 }
 
 void Game::spawnEnemies(){
-    enemies.clear();
-    for(int i = 0; i<enemyNumber; ++i) {
+    //enemies.clear();
+//    for(int i = 0; i<enemyNumber; ++i) {
+        enemyNumber--;
+        if(enemyNumber == 0) return;
         int ex, ey;
         bool validPosition = false;
         while(!validPosition) {
@@ -472,12 +561,12 @@ void Game::spawnEnemies(){
                     ey = 1*TILE_SIZE;
                     break;
                 case 1:
-                    ex =17 * TILE_SIZE;
+                    ex =  14 * TILE_SIZE;
                     ey = 1*TILE_SIZE;
                     break;
                 case 2:
-                    ex =25 * TILE_SIZE;
-                    ey = 1*TILE_SIZE;
+                    ex =26 * TILE_SIZE;
+                    ey = 2*TILE_SIZE;
                     break;
             }
             SDL_Rect rand_enemy = {ex, ey, 2*TILE_SIZE, 2*TILE_SIZE};
@@ -499,9 +588,11 @@ void Game::spawnEnemies(){
             }
 
             if(!validPosition) continue;
-            if(SDL_HasIntersection(&rand_enemy, &player.rect))
+            if(SDL_HasIntersection(&rand_enemy, &player.rect)) {
+                validPosition = false;
+                continue;
+            }
 
-            if(!validPosition) continue;
             for(const auto& enemy : enemies) {
                 if(enemy.active &&  SDL_HasIntersection(&rand_enemy, &enemy.rect)) {
                     validPosition = false;
@@ -509,9 +600,9 @@ void Game::spawnEnemies(){
                 }
             }
         }
-        enemies.push_back(EnemyTank(ex, ey));
+        enemies.push_back(EnemyTank(ex+3, ey));
 
-    }
+    //}
 }
 
 void Bullet::move()
@@ -520,8 +611,8 @@ void Bullet::move()
     y += dy;
     rect.x = x;
     rect.y = y;
-    if(x < TILE_SIZE*2 || x>= SCREEN_WIDTH - TILE_SIZE*9 ||
-       y < TILE_SIZE*2 || y > SCREEN_HEIGHT - TILE_SIZE*2)  {
+    if(x < TILE_SIZE*2 || x>= SCREEN_WIDTH - TILE_SIZE*6 ||
+       y < TILE_SIZE*1 || y > SCREEN_HEIGHT - TILE_SIZE*1)  {
                 active = false;
        }
 }
@@ -587,12 +678,27 @@ void PlayerTank::render(SDL_Renderer* renderer) {
             SDL_RenderCopy(renderer, TextureManager["playertankleft"], &frame[0], &rect);
         }
     }
+
+    if(isInvincible) {
+        SDL_Rect helmetClips[2];
+        for(int i = 0; i<2; i++) {
+            helmetClips[i].x = i * 16;
+            helmetClips[i].y = 0;
+            helmetClips[i].w = 16;
+            helmetClips[i].h = 16;
+            SDL_RenderCopy(renderer, TextureManager["helmet"], &helmetClips[invincible_Delay/10], &rect);
+            invincible_Delay++;
+            if(invincible_Delay/10 >= 2) invincible_Delay  = 0;
+        }
+
+    }
+
     for(auto &bullet: bullets) {
         bullet.render(renderer);
     }
 }
 
-void PlayerTank::move(bool tank_move, string type_input, int dx, int dy, const vector<Wall>& bricks, const vector<Wall> rocks, const vector<EnemyTank>& enemies, Eagle eagle) {
+ void PlayerTank::move(bool tank_move, string type_input, int dx, int dy, const vector<Wall>& bricks, const vector<Wall> rocks, const vector<EnemyTank>& enemies) {
     this->type_input = type_input;
     this->tank_move = tank_move;
     if(!tank_move) return;
@@ -607,20 +713,18 @@ void PlayerTank::move(bool tank_move, string type_input, int dx, int dy, const v
             return;
     }
 
-   for(int i = 0; i<rocks.size(); i++) {
-       if(rocks[i].active && SDL_HasIntersection(&newRect, &rocks[i].rect))            //kiem tra su va cham voi tuong
-           return;
-   }
-
-    for(int i = 0; i<enemies.size(); i++) {
-        if(rocks[i].active && SDL_HasIntersection(&newRect, &enemies[i].rect))            //kiem tra su va cham voi tuong
+    for(int i = 0; i<rocks.size(); i++) {
+        if(rocks[i].active && SDL_HasIntersection(&newRect, &rocks[i].rect))            //kiem tra su va cham voi tuong
             return;
     }
 
-    if(SDL_HasIntersection(&newRect, &eagle.rect)) return;
+    for(int i = 0; i<enemies.size(); i++) {
+        if(enemies[i].active && SDL_HasIntersection(&newRect, &enemies[i].rect))            //kiem tra su va cham voi tuong
+            return;
+    }
 
     if(newX >= TILE_SIZE*2 && newX <= SCREEN_WIDTH - TILE_SIZE*8 &&
-       newY >= TILE_SIZE*2 && newY <= SCREEN_HEIGHT - TILE_SIZE*6)  {
+       newY >= TILE_SIZE*1 && newY <= SCREEN_HEIGHT - TILE_SIZE*3)  {
         x = newX;
         y = newY;
         rect.x = x;
@@ -630,12 +734,23 @@ void PlayerTank::move(bool tank_move, string type_input, int dx, int dy, const v
 }
 
 void Game::update() {
+
+   Uint32 currentTime = SDL_GetTicks();
+   if(currentTime - lastSpawnTime >= spawnDelay) {
+        spawnEnemies();      // Hàm spawn enemy của bạn
+        lastSpawnTime = currentTime;
+    }
+
     player.updateBullets();
+
+    if(player.isInvincible && currentTime - player.isInvincibleStart >= player.invincible_Time) {
+        player.isInvincible = false;
+    }
 
     for(auto& enemy:enemies) {
         enemy.move(bricks, rocks, player.x, player.y);
         enemy.updateBullets();
-        if(rand() % 100 < 15) {
+          if(rand() % 100 < 15) {
             enemy.shoot();
         }
     }
@@ -698,6 +813,7 @@ void Game::update() {
         for(auto& enemy : enemies) {
             if(enemy.active && SDL_HasIntersection(&bullet.rect, &enemy.rect)) {
                 enemy.active = false;
+                enemyKill++;
                 cout << "kill_enemy" <<endl;
                 Mix_PlayChannel(-1, bulletHitSound, 0);
                 enemy.false_active(renderer);
@@ -708,49 +824,37 @@ void Game::update() {
 
     for(auto& enemy : enemies) {
         for(auto& bullet : enemy.bullets) {
-            if(SDL_HasIntersection(&bullet.rect, &eagle.rect)) {
-                running = false;
-                return;
-            }
-        }
-    }
-
-    for(auto& bullet : player.bullets) {
-            if(SDL_HasIntersection(&bullet.rect, & eagle.rect)) {
-                running = false;
-                break;
-            }
-    }
-
-    for(auto& enemy : enemies) {
-        for(auto& bullet : enemy.bullets) {
             if(SDL_HasIntersection(&bullet.rect, &player.rect)) {
                 bullet.active = false;
+                if(player.isInvincible) continue;
+                else{
                 healthPlayer--;
+                player.setInvincible(SDL_GetTicks());
                 if(healthPlayer == 0) running = false;
                 player.x = 10*TILE_SIZE;
-                player.y = 26*TILE_SIZE;
+                player.y = 24*TILE_SIZE;
                 player.rect.x = player.x;
                 player.rect.y = player.y;
                 player.type_input = "up";
                 return;
+                }
             }
         }
     }
 
     enemies.erase(remove_if(enemies.begin(), enemies.end(),
                             [] (EnemyTank &e) {return !e.active;}), enemies.end());
-    if(enemies.empty() ) {
+    if(enemyKill == 10) {
         running = false;
     }
 }
 
 Game::~Game() {
-    Mix_FreeChunk(bulletHitSound);
+    //Mix_FreeChunk(bulletHitSound);
 
-   SDL_DestroyRenderer(renderer);
-   SDL_DestroyWindow(window);
-   SDL_Quit();
+//   SDL_DestroyRenderer(renderer);
+//   SDL_DestroyWindow(window);
+//   SDL_Quit();
 }
 
 int main(int argc, char* argv[])
@@ -798,22 +902,46 @@ int main(int argc, char* argv[])
         cerr << "Failed to load gameover.wav! SDL_mixer Error: " << Mix_GetError() << endl;
     }
 
+    TextureManager["pauseButton"] = LoadTexture("image/pauseButton.png", renderer);
+    TextureManager["brick"] = LoadTexture("map/brick.png", renderer);    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
+    TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
+    TextureManager["enemytank"] = LoadTexture("map/enemytank.png", renderer);
+    TextureManager["playertankup"] = LoadTexture("image/playertankup.png", renderer);
+    TextureManager["playertankdown"] = LoadTexture("image/playertankdown.png", renderer);
+    TextureManager["playertankright"] = LoadTexture("image/playertankright.png", renderer);
+    TextureManager["playertankleft"] = LoadTexture("image/playertankleft.png", renderer);
+    TextureManager["helmet"] = LoadTexture("image/helmet.png", renderer);
+    TextureManager["enemytankfalse"] =  LoadTexture("image/enemytankfalse.png", renderer);
+    TextureManager["enemytankleft"] =  LoadTexture("image/enemytankleft.png", renderer);
+    TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
+    TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
+    TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
+
+
     // Phát nhạc nền intro menu, với tham số -1 để lặp vô hạn
     Mix_PlayMusic(introMenuMusic, -1);
 
-    Menu menu(renderer);
-    Menu::MenuResult choose = menu.chooseMenu();
-    if(choose == 0) {
+    bool exitGame = false;
+    while(!exitGame) {
+        Menu menu(renderer);
+        Menu::MenuResult choose = menu.chooseMenu();
+        if(choose == 0) {
 
-        // Khi chế độ đã chọn, dừng nhạc intro menu
-        Mix_HaltMusic();
-        // Phát nhạc intro game một lần (tham số 1)
-        Mix_PlayMusic(introGameMusic, 1);
+            // Khi chế độ đã chọn, dừng nhạc intro menu
+            Mix_HaltMusic();
+            // Phát nhạc intro game một lần (tham số 1)
+            Mix_PlayMusic(introGameMusic, 1);
 
-        Game game;
-        if(game.running) {
+            Game game;
             game.run();
-        }
+
+            if(game.isReturnToMenu) {
+                Mix_PlayMusic(introMenuMusic, -1);
+                continue;
+            } else {
+                exitGame = true;
+            }
+        } else exitGame = true;
     }
 
     // Sau khi game kết thúc, giải phóng các tài nguyên âm thanh
@@ -827,6 +955,5 @@ int main(int argc, char* argv[])
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
     return 0;
 }

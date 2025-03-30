@@ -4,9 +4,9 @@
 #include "CommonFuntion.h"
 #include "BaseObject.h"
 
-map<string, SDL_Texture*> TextureManagerMenu;
+static pair<string, SDL_Texture*> TextureManagerMenu[10];
 
-class Menu : public BaseObject {
+class Menu {
 public:
     enum MenuResult {
         ONE_PLAYER = 0,
@@ -27,6 +27,7 @@ public:
     vector<SDL_Rect> buttonRects;       // Vùng click của nút
 
     void loadMenu(SDL_Renderer* renderer);
+    void renderPauseMenu(SDL_Renderer* renderer);
     MenuResult handleClick(int x, int y);
 };
 

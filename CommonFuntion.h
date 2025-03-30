@@ -19,12 +19,13 @@
     extern bool running;
 
     const int FRAME_PER_SECOND = 60;
-    const int TILE_SIZE = 12;
-    const int MAP_WIDTH = 60;
-    const int MAP_HEIGHT = 56;
+    const int TILE_SIZE = 24;
+    const int MAP_WIDTH = 34;
+    const int MAP_HEIGHT = 28;
     const int  SCREEN_WIDTH = MAP_WIDTH*TILE_SIZE;
     const int  SCREEN_HEIGHT = MAP_HEIGHT*TILE_SIZE;
 
     SDL_Texture* LoadTexture(const char* path, SDL_Renderer* renderer);
+
 
      #endif // COMMON_FUNTION_H_

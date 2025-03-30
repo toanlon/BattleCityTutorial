@@ -25,6 +25,7 @@ public:
     vector<SDL_Rect> buttonRects;       // Vùng click của nút
 
     void loadMenu(SDL_Renderer* renderer);
+    void renderPauseMenu(SDL_Renderer* renderer);
     MenuResult handleClick(int x, int y);
 };
 

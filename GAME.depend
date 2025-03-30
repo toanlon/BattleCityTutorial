@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1743243464 source:d:\sdlprogramme\ltnc\game\main.cpp
+1743327800 source:d:\sdlprogramme\ltnc\game\main.cpp
 	"CommonFuntion.h"
 	"Menu.h"
 	"ImpTimer.h"
@@ -10,7 +10,7 @@
 1742873844 source:d:\sdlprogramme\ltnc\game\commonfuntion.cpp
 	"CommonFuntion.h"
 
-1743243543 d:\sdlprogramme\ltnc\game\commonfuntion.h
+1743325073 d:\sdlprogramme\ltnc\game\commonfuntion.h
 	<SDL.h>
 	<SDL_image.h>
 	<SDL_mixer.h>
@@ -26,11 +26,11 @@
 1742586229 d:\sdlprogramme\ltnc\game\baseobject.h
 	"CommonFuntion.h"
 
-1743182361 source:d:\sdlprogramme\ltnc\game\menu.cpp
+1743328200 source:d:\sdlprogramme\ltnc\game\menu.cpp
 	"Menu.h"
 	<utility>
 
-1743191386 d:\sdlprogramme\ltnc\game\menu.h
+1743327896 d:\sdlprogramme\ltnc\game\menu.h
 	"CommonFuntion.h"
 	"BaseObject.h"
 
