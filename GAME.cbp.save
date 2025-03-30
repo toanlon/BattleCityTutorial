@@ -36,14 +36,12 @@
 		<Unit filename="BaseObject.h" />
 		<Unit filename="CommonFuntion.cpp" />
 		<Unit filename="CommonFuntion.h" />
-		<Unit filename="GameObject.cpp" />
-		<Unit filename="GameObject.h" />
 		<Unit filename="ImpTimer.cpp" />
 		<Unit filename="ImpTimer.h" />
 		<Unit filename="Menu.cpp" />
 		<Unit filename="Menu.h" />
-		<Unit filename="game_map.cpp" />
-		<Unit filename="game_map.h" />
+		<Unit filename="Wall.cpp" />
+		<Unit filename="Wall.h" />
 		<Unit filename="main.cpp" />
 		<Extensions />
 	</Project>

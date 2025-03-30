@@ -8,7 +8,7 @@ Menu::Menu(SDL_Renderer* renderer) {
         if(TextureManagerMenu[i].second != NULL) load = true;
     }
     if(!load) {
-        TextureManagerMenu[5] = {"background", LoadTexture("image/menubackgr.png", renderer) };
+        TextureManagerMenu[5] = {"background", LoadTexture("image/menubackgr.jpg", renderer) };
         TextureManagerMenu[6] = {"stringbattlecity", LoadTexture("image/stringbattlecity.png", renderer) };
         TextureManagerMenu[0] = {"mode1p", LoadTexture("image/tt1player.png", renderer)};
         TextureManagerMenu[1] = {"mode2p", LoadTexture("image/tt2player.png", renderer)};

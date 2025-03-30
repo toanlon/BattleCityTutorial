@@ -3,6 +3,73 @@
 #include "ImpTimer.h"
 map<string, SDL_Texture*> TextureManager;
 
+
+void displayGameOver(SDL_Renderer* renderer, int score, Mix_Chunk* gameOverSound) {
+    // Khởi tạo SDL_ttf nếu chưa khởi tạo
+    if (TTF_WasInit() == 0) {
+        if (TTF_Init() == -1) {
+            cerr << "Failed to initialize TTF: " << TTF_GetError() << endl;
+            return;
+        }
+    }
+
+    // Tạo chuỗi điểm số
+    stringstream ss;
+    ss << "Score: " << score;
+    string scoreText = ss.str();
+
+    SDL_Color red = {255, 0, 0, 255};
+
+    // Phát âm thanh game over (một lần)
+    Mix_PlayChannel(-1, gameOverSound, 0);
+
+    SDL_Rect gameoverBGR = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    SDL_Rect stringGame_over = {SCREEN_WIDTH/2-100, 200, 200, 200};
+    string final_scoreText = "Score: " + to_string(score);
+    SDL_Color textColorScore = {255, 255, 255}; // màu trắng
+    SDL_Rect renderScore = { SCREEN_WIDTH/2-50, 480, 100, 50 };
+
+    // Vòng lặp chờ người dùng bấm phím (hoặc sự kiện QUIT) để thoát màn hình Game Over
+    bool waiting = true;
+    SDL_Event event;
+    while (waiting) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || event.type == SDL_MOUSEBUTTONDOWN) {
+                waiting = false;
+            }
+        }
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, TextureManager["gameoverBRG"], NULL, &gameoverBGR);
+        SDL_RenderCopy(renderer, TextureManager["gameoverSTR"], NULL, &stringGame_over);
+        SDL_RenderCopy(renderer, LoadTTF(scoreFont, final_scoreText.c_str(), textColorScore) , NULL, &renderScore);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(10); // Delay nhẹ để tránh vòng lặp bận
+    }
+
+}
+
+void displayYouWin(SDL_Renderer* renderer, Mix_Chunk* gameOverSound) {
+
+    Mix_PlayChannel(-1, gameOverSound, 0);
+
+    SDL_Rect youWinRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    bool waiting = true;
+    SDL_Event event;
+    while (waiting) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || event.type == SDL_MOUSEBUTTONDOWN) {
+                waiting = false;
+            }
+        }
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, TextureManager["win"], NULL, &youWinRect);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(10); // Delay nhẹ để tránh vòng lặp bận
+    }
+
+}
+
+
 class Wall {
 public:
     int x,y;
@@ -159,7 +226,7 @@ public:
     void shoot() {
         if(-- shootDelay > 0) return;
         shootDelay = 5;
-        bullets.push_back(Bullet(x+TILE_SIZE -5, y+TILE_SIZE - 5, this->dirX/2, this->dirY/2));
+        bullets.push_back(Bullet(x+TILE_SIZE -10, y+TILE_SIZE - 5, this->dirX/2, this->dirY/2));
     }
 
     void updateBullets() {
@@ -285,7 +352,9 @@ public:
     ImpTimer pauseTimer;         // để đo thời gian bị pause
 
     int healthPlayer = 3;
+    int score = 0;
     bool running;
+    bool WIN = false;
     bool isReturnToMenu = false;
     vector<Wall> bricks;
     vector<Wall> rocks;
@@ -313,21 +382,6 @@ Game::Game() {
         cerr << "Failed to load bullethit.wav! SDL_mixer Error: " << Mix_GetError() << endl;
     }
 
-//    TextureManager["pauseButton"] = LoadTexture("image/pauseButton.png", renderer);
-//    TextureManager["brick"] = LoadTexture("map/brick.png", renderer);
-//    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
-//    TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
-//    TextureManager["enemytank"] = LoadTexture("map/enemytank.png", renderer);
-//    TextureManager["playertankup"] = LoadTexture("image/playertankup.png", renderer);
-//    TextureManager["playertankdown"] = LoadTexture("image/playertankdown.png", renderer);
-//    TextureManager["playertankright"] = LoadTexture("image/playertankright.png", renderer);
-//    TextureManager["playertankleft"] = LoadTexture("image/playertankleft.png", renderer);
-//    TextureManager["helmet"] = LoadTexture("image/helmet.png", renderer);
-//    TextureManager["enemytankfalse"] =  LoadTexture("image/enemytankfalse.png", renderer);
-//    TextureManager["enemytankleft"] =  LoadTexture("image/enemytankleft.png", renderer);
-//    TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
-//    TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
-//    TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
     const string mapPath = "map/test.txt";
     LoadMap(mapPath);
 
@@ -402,6 +456,16 @@ void Game::render(SDL_Renderer* renderer) {
     SDL_Rect buttonPauseR = {700, 50, 50, 50};
     SDL_RenderCopy(renderer, TextureManager["pauseButton"], NULL, &buttonPauseR);
 
+    string scoreText = "Score: " + to_string(score);
+    SDL_Color textColorScore = {255, 255, 255}; // màu trắng
+    SDL_Rect renderScore = { SCREEN_WIDTH - 125, 100, 100, 50 };
+    SDL_RenderCopy(renderer, LoadTTF(scoreFont, scoreText.c_str(), textColorScore) , NULL, &renderScore);
+
+    string healthPlayerText = "Health: " + to_string(healthPlayer);
+    SDL_Color textColorHealth = {255, 0, 0, 255}; // màu trắng
+    SDL_Rect renderHealth = { SCREEN_WIDTH - 125, 200, 100, 50 };
+    SDL_RenderCopy(renderer, LoadTTF(scoreFont, healthPlayerText.c_str(), textColorHealth) , NULL, &renderHealth);
+
     SDL_RenderPresent(renderer);                                               // hien thi len man hinh
 }
 
@@ -430,21 +494,6 @@ void Game::handleEvents() {
                 }
             }
         } else if(event.type == SDL_KEYDOWN) {
-
-                // Kiểm tra phím pause (ví dụ: phím P)
-            if(event.key.keysym.sym == SDLK_p) {
-                if(!isPaused) {
-                    isPaused = true;
-                    pauseTimer.start();
-                } else {
-                    // Khi resume: cộng thêm khoảng thời gian bị pause vào lastSpawnTime
-                    Uint32 pauseDuration = pauseTimer.get_ticks();
-                    lastSpawnTime += pauseDuration;
-                    player.isInvincibleStart += pauseDuration;
-                    isPaused = false;
-                }
-            }
-            // Các phím khác
             if(!isPaused) { // Chỉ xử lý input khi không pause
                 switch(event.key.keysym.sym) {
                     case SDLK_UP: player.move(true, "up", 0, -8, bricks, rocks, enemies); break;
@@ -814,6 +863,7 @@ void Game::update() {
             if(enemy.active && SDL_HasIntersection(&bullet.rect, &enemy.rect)) {
                 enemy.active = false;
                 enemyKill++;
+                score++;
                 cout << "kill_enemy" <<endl;
                 Mix_PlayChannel(-1, bulletHitSound, 0);
                 enemy.false_active(renderer);
@@ -830,7 +880,14 @@ void Game::update() {
                 else{
                 healthPlayer--;
                 player.setInvincible(SDL_GetTicks());
-                if(healthPlayer == 0) running = false;
+                if(healthPlayer == 0) {
+//                    SDL_Rect gameoverBGR = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+//                    SDL_RenderCopy(renderer, TextureManager["gameoverBRG"], NULL, &gameoverBGR);
+//                    SDL_Rect stringGame_over = {200, 200, 200, 200};
+//                    SDL_RenderCopy(renderer, TextureManager["gameoverSTR"], NULL, &gameoverBGR);
+
+                    running = false;
+                }
                 player.x = 10*TILE_SIZE;
                 player.y = 24*TILE_SIZE;
                 player.rect.x = player.x;
@@ -844,17 +901,14 @@ void Game::update() {
 
     enemies.erase(remove_if(enemies.begin(), enemies.end(),
                             [] (EnemyTank &e) {return !e.active;}), enemies.end());
-    if(enemyKill == 10) {
+    if(enemyKill == 11) {
+        WIN = true;
         running = false;
     }
 }
 
 Game::~Game() {
-    //Mix_FreeChunk(bulletHitSound);
 
-//   SDL_DestroyRenderer(renderer);
-//   SDL_DestroyWindow(window);
-//   SDL_Quit();
 }
 
 int main(int argc, char* argv[])
@@ -864,6 +918,18 @@ int main(int argc, char* argv[])
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         cerr << "SDL could not initialize! SDL_Eror: " << SDL_GetError() << endl;
         running = false;
+    }
+
+    // Khởi tạo SDL_ttf
+    if (TTF_Init() == -1) {
+        cerr << "SDL_ttf could not initialize! TTF_Error: " << TTF_GetError() << endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    scoreFont = TTF_OpenFont("font/score.ttf", 24);
+    if(scoreFont == NULL) {
+        cerr << "Failed to load font! TTF_Error: " << TTF_GetError() << endl;
     }
 
     // Khởi tạo SDL_mixer với tần số 44100 Hz, định dạng mặc định, 2 kênh (stereo) và kích thước buffer 2048 byte
@@ -902,6 +968,11 @@ int main(int argc, char* argv[])
         cerr << "Failed to load gameover.wav! SDL_mixer Error: " << Mix_GetError() << endl;
     }
 
+    Mix_Chunk* youWinSound = Mix_LoadWAV("sound/win.mp3");
+    if(!youWinSound) {
+        cerr << "Failed to load sound/win.mp3! SDL_mixer Error: " << Mix_GetError() << endl;
+    }
+
     TextureManager["pauseButton"] = LoadTexture("image/pauseButton.png", renderer);
     TextureManager["brick"] = LoadTexture("map/brick.png", renderer);    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
     TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);
@@ -916,8 +987,9 @@ int main(int argc, char* argv[])
     TextureManager["enemytankright"] =  LoadTexture("image/enemytankright.png", renderer);
     TextureManager["enemytankup"] =  LoadTexture("image/enemytankup.png", renderer);
     TextureManager["enemytankdown"] =  LoadTexture("image/enemytankdown.png", renderer);
-
-
+    TextureManager["gameoverBRG"] = LoadTexture("image/menubackgr.jpg", renderer);
+    TextureManager["gameoverSTR"] = LoadTexture("image/gameover.png", renderer);
+    TextureManager["win"] =  LoadTexture("image/win.jpg", renderer);
     // Phát nhạc nền intro menu, với tham số -1 để lặp vô hạn
     Mix_PlayMusic(introMenuMusic, -1);
 
@@ -934,7 +1006,8 @@ int main(int argc, char* argv[])
 
             Game game;
             game.run();
-
+            if(game.WIN) displayYouWin(renderer, youWinSound);
+            else displayGameOver(renderer, game.enemyKill, gameOverSound);
             if(game.isReturnToMenu) {
                 Mix_PlayMusic(introMenuMusic, -1);
                 continue;
@@ -947,7 +1020,7 @@ int main(int argc, char* argv[])
     // Sau khi game kết thúc, giải phóng các tài nguyên âm thanh
     Mix_FreeMusic(introMenuMusic);
     Mix_FreeMusic(introGameMusic);
-    //Mix_FreeChunk(bulletHitSound);
+   // Mix_FreeChunk(bulletHitSound);
     Mix_FreeChunk(gameOverSound);
     // Đóng SDL_mixer
     Mix_CloseAudio();
