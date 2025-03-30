@@ -20,6 +20,7 @@
     extern SDL_Renderer* renderer;
     extern TTF_Font* scoreFont;
     extern bool running;
+    extern map<string, SDL_Texture*> TextureManager;
 
     const int FRAME_PER_SECOND = 60;
     const int TILE_SIZE = 24;

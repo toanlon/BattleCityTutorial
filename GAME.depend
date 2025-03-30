@@ -1,16 +1,20 @@
 # depslib dependency file v1.0
-1743337517 source:d:\sdlprogramme\ltnc\game\main.cpp
+1743350274 source:d:\sdlprogramme\ltnc\game\main.cpp
 	"CommonFuntion.h"
 	"Menu.h"
-	"ImpTimer.h"
+	"Wall.h"
+	"EnemyTank.h"
+	"Bullet.h"
+	"PlayerTank.h"
+	"Game.h"
 
 1742718443 source:d:\sdlprogramme\ltnc\game\baseobject.cpp
 	"BaseObject.h"
 
-1743331336 source:d:\sdlprogramme\ltnc\game\commonfuntion.cpp
+1743338467 source:d:\sdlprogramme\ltnc\game\commonfuntion.cpp
 	"CommonFuntion.h"
 
-1743333120 d:\sdlprogramme\ltnc\game\commonfuntion.h
+1743338467 d:\sdlprogramme\ltnc\game\commonfuntion.h
 	<SDL.h>
 	<SDL_image.h>
 	<SDL_mixer.h>
@@ -46,6 +50,44 @@
 1743157213 source:d:\sdlprogramme\ltnc\game\imptimer.cpp
 	"ImpTimer.h"
 
-1743157202 d:\sdlprogramme\ltnc\game\imptimer.h
+1743344303 d:\sdlprogramme\ltnc\game\imptimer.h
 	"CommonFuntion.h"
+
+1743338274 d:\sdlprogramme\ltnc\game\wall.h
+	"CommonFuntion.h"
+
+1743338274 source:d:\sdlprogramme\ltnc\game\wall.cpp
+	"Wall.h"
+
+1743339882 source:d:\sdlprogramme\ltnc\game\bullet.cpp
+	"Bullet.h"
+
+1743339882 d:\sdlprogramme\ltnc\game\bullet.h
+	"CommonFuntion.h"
+
+1743351436 d:\sdlprogramme\ltnc\game\enemytank.h
+	"CommonFuntion.h"
+	"Bullet.h"
+	"Wall.h"
+
+1743352358 source:d:\sdlprogramme\ltnc\game\enemytank.cpp
+	"EnemyTank.h"
+
+1743340946 source:d:\sdlprogramme\ltnc\game\playertank.cpp
+	"PlayerTank.h"
+
+1743344815 d:\sdlprogramme\ltnc\game\playertank.h
+	"CommonFuntion.h"
+	"EnemyTank.h"
+	"Wall.h"
+
+1743352813 source:d:\sdlprogramme\ltnc\game\game.cpp
+	"Game.h"
+
+1743352520 d:\sdlprogramme\ltnc\game\game.h
+	"PlayerTank.h"
+	"EnemyTank.h"
+	"Wall.h"
+	"Menu.h"
+	"ImpTimer.h"
 

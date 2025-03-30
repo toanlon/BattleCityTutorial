@@ -3,6 +3,7 @@
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 TTF_Font* scoreFont = NULL;
+map<string, SDL_Texture*> TextureManager;
 bool running = true;
 
 SDL_Texture* LoadTexture(const char* path, SDL_Renderer* renderer) {

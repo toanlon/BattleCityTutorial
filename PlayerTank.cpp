@@ -1,0 +1,134 @@
+#include "PlayerTank.h"
+
+PlayerTank :: PlayerTank() {
+        isInvincible = true;
+        tank_move = false;
+        type_input = "up";
+        dirX = 0;
+        dirY = -12;
+    }
+
+PlayerTank :: PlayerTank(int startX, int startY) {
+        isInvincible = true;
+        tank_move = false;
+        type_input = "up";
+        x = startX;
+        y = startY;
+        rect = {x+8, y+8, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
+        dirX = 0;
+        dirY = -1;                                              // mac dinh tank di len (truc y huong xuong)
+    }
+
+void PlayerTank :: setInvincible(Uint32 currentTime) {
+        isInvincible = true;
+        isInvincibleStart = currentTime;
+    }
+
+ void PlayerTank::p_move(bool tank_move, string type_input, int dx, int dy, const vector<Wall>& bricks, const vector<Wall> rocks, const vector<EnemyTank>& enemies) {
+    this->type_input = type_input;
+    this->tank_move = tank_move;
+    if(!tank_move) return;
+    int newX = x+dx;
+    int newY = y+dy;
+    this->dirX = dx;
+    this->dirY = dy;
+
+    SDL_Rect newRect = {newX, newY, 2*TILE_SIZE, 2*TILE_SIZE};
+    for(int i = 0; i<bricks.size(); i++) {
+        if(bricks[i].active && SDL_HasIntersection(&newRect, &bricks[i].rect))            //kiem tra su va cham voi tuong
+            return;
+    }
+
+    for(int i = 0; i<rocks.size(); i++) {
+        if(rocks[i].active && SDL_HasIntersection(&newRect, &rocks[i].rect))            //kiem tra su va cham voi tuong
+            return;
+    }
+
+    for(int i = 0; i<enemies.size(); i++) {
+        if(enemies[i].active && SDL_HasIntersection(&newRect, &enemies[i].rect))            //kiem tra su va cham voi tuong
+            return;
+    }
+
+    if(newX >= TILE_SIZE*2 && newX <= SCREEN_WIDTH - TILE_SIZE*8 &&
+       newY >= TILE_SIZE*1 && newY <= SCREEN_HEIGHT - TILE_SIZE*3)  {
+        x = newX;
+        y = newY;
+        rect.x = x;
+        rect.y = y;
+       }
+
+    }
+
+void PlayerTank::p_shoot() {
+    bullets.push_back(Bullet(x + TILE_SIZE-5, y+ TILE_SIZE-5,this->dirX, this->dirY));
+}
+
+void PlayerTank::p_updateBullets() {
+    for(auto& bullet :  bullets) {
+        bullet.move();
+    }
+    bullets.erase(remove_if(bullets.begin(), bullets.end(),                 // di chuyen cac vien dan xuong cuoi mang roi xoa
+                            [](Bullet& b) { return !b.active; }) , bullets.end());
+}
+
+void PlayerTank::p_render(SDL_Renderer* renderer) {
+    if(tank_move) {
+        if(type_input == "up") {
+            SDL_RenderCopy(renderer, TextureManager["playertankup"], &frame[up], &rect);
+            up++;
+            if(up > 1) up = 0;
+        }
+
+        if(type_input == "down") {
+            SDL_RenderCopy(renderer, TextureManager["playertankdown"], &frame[down], &rect);
+            down++;
+            if(down > 1) down = 0;
+        }
+
+        if(type_input == "right") {
+            SDL_RenderCopy(renderer, TextureManager["playertankright"], &frame[right], &rect);
+            right++;
+            if(right > 1) right = 0;
+        }
+
+        if(type_input == "left") {
+            SDL_RenderCopy(renderer, TextureManager["playertankleft"], &frame[left], &rect);
+            left++;
+            if(left > 1) left = 0;
+        }
+    } else {
+        if(type_input == "up") {
+            SDL_RenderCopy(renderer, TextureManager["playertankup"], &frame[0], &rect);
+        }
+
+        if(type_input == "down") {
+            SDL_RenderCopy(renderer, TextureManager["playertankdown"], &frame[0], &rect);
+        }
+
+        if(type_input == "right") {
+            SDL_RenderCopy(renderer, TextureManager["playertankright"], &frame[0], &rect);
+        }
+
+        if(type_input == "left") {
+            SDL_RenderCopy(renderer, TextureManager["playertankleft"], &frame[0], &rect);
+        }
+    }
+
+    if(isInvincible) {
+        SDL_Rect helmetClips[2];
+        for(int i = 0; i<2; i++) {
+            helmetClips[i].x = i * 16;
+            helmetClips[i].y = 0;
+            helmetClips[i].w = 16;
+            helmetClips[i].h = 16;
+            SDL_RenderCopy(renderer, TextureManager["helmet"], &helmetClips[invincible_Delay/10], &rect);
+            invincible_Delay++;
+            if(invincible_Delay/10 >= 2) invincible_Delay  = 0;
+        }
+
+    }
+
+    for(auto &bullet: bullets) {
+        bullet.render(renderer);
+    }
+}
