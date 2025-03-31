@@ -12,14 +12,10 @@ Game::Game() {
     const string mapPath = "map/test.txt";
     LoadMap(mapPath);
 
-//    Uint32 currentTime = SDL_GetTicks();
-//    if(currentTime - lastSpawnTime >= spawnDelay) {
     spawnEnemies();      // Hàm spawn enemy của bạn
 
     // Thiết lập lastSpawnTime ban đầu
     lastSpawnTime = SDL_GetTicks();
-//        lastSpawnTime = currentTime;
-//    }
 }
 
 void Game:: LoadMap(const string& path) {
@@ -102,7 +98,6 @@ void Game::handleEvents() {
         if(event.type == SDL_QUIT) {
             running =false;
         } else if(event.type == SDL_MOUSEBUTTONDOWN) {
-            // Giả sử nút pause nằm ở góc trên bên phải, ví dụ: (SCREEN_WIDTH-100, 0) với kích thước 100x50
             int mx = event.button.x;
             int my = event.button.y;
             SDL_Rect buttonPauseR = {700, 50, 50, 50};
@@ -144,13 +139,11 @@ void Game::handleEvents() {
 }
 void Game::run() {
     while(running) {
-       // cout <<
-        //render(renderer);
         fps_timer.start();
         handleEvents();
 
         if(isPaused) {
-            pauseMenu->renderPauseMenu(renderer);  // hàm tự bạn viết để render pause menu
+            pauseMenu->renderPauseMenu(renderer);
 
             // Chờ người dùng bấm vào các nút trong pause menu
             // Bạn có thể dùng một vòng lặp nhỏ riêng để xử lý sự kiện pause menu
@@ -202,7 +195,6 @@ void Game::run() {
             int delay_time = time_one_frame - real_imp_time;
             if(delay_time >= 0) SDL_Delay(delay_time);
         }
-        //SDL_Delay(16);
     }
 }
 
@@ -375,10 +367,6 @@ void Game::update() {
                 healthPlayer--;
                 player.setInvincible(SDL_GetTicks());
                 if(healthPlayer == 0) {
-//                    SDL_Rect gameoverBGR = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-//                    SDL_RenderCopy(renderer, TextureManager["gameoverBRG"], NULL, &gameoverBGR);
-//                    SDL_Rect stringGame_over = {200, 200, 200, 200};
-//                    SDL_RenderCopy(renderer, TextureManager["gameoverSTR"], NULL, &gameoverBGR);
 
                     running = false;
                 }

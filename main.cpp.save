@@ -128,6 +128,7 @@ int main(int argc, char* argv[])
         cerr << "Failed to load sound/win.mp3! SDL_mixer Error: " << Mix_GetError() << endl;
     }
 
+    // Quản lí texture hình ảnh 
     TextureManager["pauseButton"] = LoadTexture("image/pauseButton.png", renderer);
     TextureManager["brick"] = LoadTexture("map/brick.png", renderer);    TextureManager["rock"] = LoadTexture("map/rock.png", renderer);
     TextureManager["playertank"] = LoadTexture("image/playertank.png", renderer);

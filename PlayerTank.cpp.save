@@ -14,7 +14,7 @@ PlayerTank :: PlayerTank(int startX, int startY) {
         type_input = "up";
         x = startX;
         y = startY;
-        rect = {x+8, y+8, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
+        rect = {x+12, y+12, 2*TILE_SIZE-12, 2*TILE_SIZE-12};
         dirX = 0;
         dirY = -1;                                              // mac dinh tank di len (truc y huong xuong)
     }
@@ -33,7 +33,7 @@ void PlayerTank :: setInvincible(Uint32 currentTime) {
     this->dirX = dx;
     this->dirY = dy;
 
-    SDL_Rect newRect = {newX, newY, 2*TILE_SIZE, 2*TILE_SIZE};
+    SDL_Rect newRect = {newX, newY, 2*TILE_SIZE-8, 2*TILE_SIZE-8};
     for(int i = 0; i<bricks.size(); i++) {
         if(bricks[i].active && SDL_HasIntersection(&newRect, &bricks[i].rect))            //kiem tra su va cham voi tuong
             return;

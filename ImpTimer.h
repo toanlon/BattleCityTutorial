@@ -17,15 +17,8 @@ class ImpTimer
         ~ImpTimer();
 
         void start();
-        void stop();
-        void paused();
-        void unpaused();
 
         int get_ticks();
-
-        bool is_started();
-        bool is_paused();
-
 };
 
 

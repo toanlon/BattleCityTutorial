@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1743350274 source:d:\sdlprogramme\ltnc\game\main.cpp
+1743383503 source:d:\sdlprogramme\ltnc\game\main.cpp
 	"CommonFuntion.h"
 	"Menu.h"
 	"Wall.h"
@@ -47,10 +47,10 @@
 1742702910 d:\sdlprogramme\ltnc\game\gameobject.h
 	"BaseObject.h"
 
-1743157213 source:d:\sdlprogramme\ltnc\game\imptimer.cpp
+1743383585 source:d:\sdlprogramme\ltnc\game\imptimer.cpp
 	"ImpTimer.h"
 
-1743344303 d:\sdlprogramme\ltnc\game\imptimer.h
+1743383612 d:\sdlprogramme\ltnc\game\imptimer.h
 	"CommonFuntion.h"
 
 1743338274 d:\sdlprogramme\ltnc\game\wall.h
@@ -73,7 +73,7 @@
 1743352358 source:d:\sdlprogramme\ltnc\game\enemytank.cpp
 	"EnemyTank.h"
 
-1743340946 source:d:\sdlprogramme\ltnc\game\playertank.cpp
+1743383912 source:d:\sdlprogramme\ltnc\game\playertank.cpp
 	"PlayerTank.h"
 
 1743344815 d:\sdlprogramme\ltnc\game\playertank.h
@@ -81,7 +81,7 @@
 	"EnemyTank.h"
 	"Wall.h"
 
-1743352813 source:d:\sdlprogramme\ltnc\game\game.cpp
+1743383863 source:d:\sdlprogramme\ltnc\game\game.cpp
 	"Game.h"
 
 1743352520 d:\sdlprogramme\ltnc\game\game.h
